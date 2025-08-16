@@ -274,38 +274,6 @@ make clean            # Stop port-forwards and cleanup
 make troubleshoot     # Comprehensive diagnostics
 ```
 
-## 🔄 GitOps Workflow
-
-### 1. Edit Staging Configuration
-```bash
-# Edit staging values
-vim charts/hello-nginx/values-staging.yaml
-
-# Check current status
-make promote-status
-```
-
-### 2. Test in Staging
-```bash
-# Staging is automatically deployed via ArgoCD
-# Access at http://localhost:8081
-```
-
-### 3. Promote to Production
-```bash
-# Copy staging values to production
-make promote
-
-# Check deployment status
-make status
-```
-
-### 4. Rollback if Needed
-```bash
-# Rollback to previous production version
-make rollback
-```
-
 ## 🎛️ Modular Architecture
 
 The system uses a **modular script-based architecture** where the Makefile acts as a thin wrapper:
@@ -374,26 +342,6 @@ make down            # Destroy everything
 make up              # Start fresh
 ```
 
-## 🎮 Development Workflow
-
-### Daily Development
-```bash
-# Start development session
-make up && make port-forward
-
-# Edit staging configuration
-vim charts/hello-nginx/values-staging.yaml
-
-# Check promotion status
-make promote-status
-
-# Promote when ready
-make promote
-
-# Stop everything when done
-make down
-```
-
 ### Background Operation
 
 The system supports **background port-forwarding** with automatic PID management:
@@ -411,37 +359,6 @@ kill $(cat ~/portforward-argocd-server.pid)
 
 # Stop all
 make clean
-```
-
-## 📁 Repository Structure
-
-```
-.
-├── Makefile                 # Clean interface to scripts
-├── README.md               # This documentation
-├── issues.md              # Setup issues and resolutions
-├── scripts/               # Modular script architecture
-│   ├── setup.sh          # Infrastructure setup
-│   ├── teardown.sh       # Cleanup
-│   ├── git-setup.sh      # Git/Gitea integration
-│   ├── promote.sh        # Promotion workflow
-│   ├── pf.sh             # Port-forwarding
-│   └── ...
-├── terraform/            # Infrastructure as Code
-│   ├── main.tf          # Main infrastructure
-│   ├── providers.tf     # Provider configuration
-│   └── values/          # Helm chart values
-│       ├── argocd-values.yaml
-│       └── gitea-values.yaml
-├── argocd/              # ArgoCD application manifests
-│   └── apps/
-│       ├── hello-staging.yaml
-│       └── hello-prod.yaml
-└── charts/              # Helm charts
-    └── hello-nginx/
-        ├── values-staging.yaml
-        ├── values-prod.yaml
-        └── templates/
 ```
 
 ## 🔒 Security Notes
