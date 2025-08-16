@@ -300,6 +300,41 @@ scripts/
 5. **Testable**: Scripts can be tested in isolation
 6. **Robust**: Each script handles errors and edge cases
 
+## 📡 Git Remotes (Working Locally)
+
+> **Note**: This project is configured with dual Git remotes for flexible development workflow.
+
+### Remote Configuration
+- **`origin`** - Local Gitea server (used by ArgoCD for local development)
+- **`github`** - GitHub repository (for code backup and collaboration)
+
+### Commands for Managing Remotes
+
+```bash
+# View all remotes
+git remote -v
+
+# Push to local Gitea (ArgoCD will pick up changes)
+git push origin develop
+
+# Push to GitHub (for backup/collaboration)
+git push github develop
+
+# Push to both remotes
+git push origin develop && git push github develop
+```
+
+### Typical Workflow
+1. **Local Development**: ArgoCD monitors the local Gitea (`origin`) for changes
+2. **Code Backup**: Push to GitHub (`github`) when you want to backup or share code
+3. **GitOps**: ArgoCD only uses the local Gitea - GitHub is purely for external access
+
+This setup allows you to:
+- ✅ Work completely offline with local GitOps
+- ✅ Backup code to GitHub whenever needed  
+- ✅ Collaborate with others via GitHub
+- ✅ Keep ArgoCD focused on local development
+
 ## 🔧 Troubleshooting
 
 ### Quick Diagnostics
