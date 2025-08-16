@@ -1,5 +1,5 @@
 # Hostaway DevOps Task - Clean GitOps Workflow
-.PHONY: help up down status port-forward promote rollback promote-status urls clean deps remove-deps troubleshoot
+.PHONY: help up down status port-forward promote rollback promote-status urls clean deps troubleshoot
 .DEFAULT_GOAL := help
 
 help:
@@ -8,7 +8,6 @@ help:
 	@echo ""
 	@echo "📋 Setup (one-time):"
 	@echo "  deps         - Install required dependencies via Homebrew"
-	@echo "  remove-deps  - Remove installed dependencies"
 	@echo ""
 	@echo "📦 Infrastructure:"
 	@echo "  up           - Start Minikube and deploy GitOps stack"
@@ -104,9 +103,6 @@ clean:
 
 deps:
 	@./scripts/deps.sh
-
-remove-deps:
-	@./scripts/remove-deps.sh
 
 troubleshoot:
 	@./scripts/troubleshoot.sh
