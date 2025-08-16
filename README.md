@@ -1,4 +1,4 @@
-# Hostaway DevOps Task - Modular GitOps Workflow
+# DevOps Task - Modular GitOps Workflow
 
 A robust, modular GitOps workflow for local development using Minikube, ArgoCD, Helm, Terraform, and Gitea. Features copy-based promotion, one-command rollback, and background port-forwarding.
 
