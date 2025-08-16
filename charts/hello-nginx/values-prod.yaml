@@ -1,4 +1,4 @@
 # Staging environment overrides
-message: "hello this is v6 final test - production environment"
-appVersion: "v6"
+message: "hello it's me - production environment"
+appVersion: "v1"
 replicaCount: 2
