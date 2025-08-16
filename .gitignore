@@ -1,0 +1,36 @@
+# Terraform files
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfstate*
+
+# Minikube tunnel files
+tunnel.log
+tunnel.pid
+
+# Port-forward files
+*-pf.log
+*-pf.pid
+
+# Temporary files
+*.log
+*.tmp
+*.temp
+.DS_Store
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+Thumbs.db
+.directory
+
+# Backup files
+*~
+*.bak
+*.backup
+
+# Git Large File Storage
+*.lfs
