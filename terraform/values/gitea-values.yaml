@@ -1,0 +1,29 @@
+gitea:
+  admin:
+    username: admin
+    password: admin12345
+    email: admin@example.com
+
+service:
+  http:
+    type: NodePort  # let K8s auto-assign; avoids conflicts
+  ssh:
+    enabled: false
+
+persistence:
+  enabled: false     # purely local demo; ephemeral
+
+postgresql:
+  enabled: false     # use built-in sqlite for simplicity
+
+ingress:
+  enabled: false
+
+# Resource limits for local development
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi

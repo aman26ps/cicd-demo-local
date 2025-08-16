@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: hello-prod
+  namespace: argocd
+  labels:
+    environment: production
+    tier: internal
+    app: hello-nginx
+spec:
+  project: default
+  source:
+    repoURL: http://gitea-http.dev-tools.svc.cluster.local:3000/admin/hostaway-devops-task.git
+    path: charts/hello-nginx
+    targetRevision: main  # Production tracks main branch
+    helm:
+      valueFiles:
+        - values-prod.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: internal-prod
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

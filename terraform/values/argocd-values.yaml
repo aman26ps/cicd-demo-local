@@ -1,0 +1,59 @@
+# ArgoCD configuration for NodePort access with no authentication
+configs:
+  params:
+    server.insecure: true
+    server.disable.auth: true
+  rbac:
+    policy.default: role:admin
+  repositories:
+    hostaway-devops-task:
+      url: http://gitea-http.dev-tools.svc.cluster.local:3000/admin/hostaway-devops-task.git
+      username: admin
+      password: admin12345
+      type: git
+
+server:
+  extraArgs:
+    - --insecure
+  service:
+    type: NodePort
+    # No nodePort field to avoid conflicts - let Kubernetes auto-assign
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Disable internal TLS for NodePort compatibility  
+global:
+  logging:
+    level: info
+
+# Resource limits for local development
+controller:
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+repoServer:
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Enable application set controller
+applicationSet:
+  enabled: true
+
+# Notifications controller (optional)
+notifications:
+  enabled: false

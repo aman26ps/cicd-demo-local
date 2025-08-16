@@ -1,0 +1,39 @@
+# Default values for hello-nginx
+replicaCount: 1
+
+image:
+  repository: nginx
+  tag: 1.25-alpine
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+
+# Custom message and version
+message: "hello it's me"
+appVersion: "v1"
+
+# Ingress configuration (disabled by default)
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: hello-nginx.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

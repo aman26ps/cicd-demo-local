@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-nginx
+  labels:
+    {{- include "hello-nginx.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+      # No nodePort field - let Kubernetes auto-assign to avoid conflicts
+  selector:
+    {{- include "hello-nginx.selectorLabels" . | nindent 4 }}

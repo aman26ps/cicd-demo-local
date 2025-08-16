@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: hello-staging
+  namespace: argocd
+  labels:
+    environment: staging
+    tier: internal
+    app: hello-nginx
+spec:
+  project: default
+  source:
+    repoURL: http://gitea-http.dev-tools.svc.cluster.local:3000/admin/hostaway-devops-task.git
+    path: charts/hello-nginx
+    targetRevision: develop  # Staging tracks develop branch
+    helm:
+      valueFiles:
+        - values-staging.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: internal-staging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

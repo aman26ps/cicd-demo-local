@@ -1,0 +1,101 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "hello-nginx.fullname" . }}-config
+  labels:
+    {{- include "hello-nginx.labels" . | nindent 4 }}
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Hello Nginx</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 50px;
+                text-align: center;
+                background-color: #f0f0f0;
+            }
+            .container {
+                background-color: white;
+                padding: 30px;
+                border-radius: 10px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                display: inline-block;
+            }
+            h1 {
+                color: #2c3e50;
+                margin-bottom: 20px;
+            }
+            .version {
+                color: #7f8c8d;
+                font-size: 14px;
+                margin-top: 20px;
+            }
+            .timestamp {
+                color: #95a5a6;
+                font-size: 12px;
+                margin-top: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>{{ .Values.message }}</h1>
+            <div class="version">Version: {{ .Values.appVersion }}</div>
+            <div class="timestamp">Deployed at: {{ now | date "2006-01-02 15:04:05 UTC" }}</div>
+        </div>
+    </body>
+    </html>
+
+---
+{{/*
+Expand the name of the chart.
+*/}}
+{{- define "hello-nginx.name" -}}
+{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Create a default fully qualified app name.
+*/}}
+{{- define "hello-nginx.fullname" -}}
+{{- if .Values.fullnameOverride }}
+{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- $name := default .Chart.Name .Values.nameOverride }}
+{{- if contains $name .Release.Name }}
+{{- .Release.Name | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
+Create chart name and version as used by the chart label.
+*/}}
+{{- define "hello-nginx.chart" -}}
+{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Common labels
+*/}}
+{{- define "hello-nginx.labels" -}}
+helm.sh/chart: {{ include "hello-nginx.chart" . }}
+{{ include "hello-nginx.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "hello-nginx.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "hello-nginx.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
