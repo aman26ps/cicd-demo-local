@@ -37,12 +37,214 @@ This is a **local-first GitOps setup** designed for development and testing:
 - **Helm**: Package manager for Kubernetes applications
 - **Terraform**: Manages infrastructure and Helm charts
 
+### 🔄 GitOps Workflow Diagram
+
+```mermaid
+graph TB
+    subgraph "Developer Machine"
+        DEV[👨‍💻 Developer]
+        LOCAL[📁 Local Repo]
+    end
+    
+    subgraph "Git Repository (Gitea)"
+        DEVELOP[🌱 develop branch<br/>Staging Config]
+        MAIN[🏭 main branch<br/>Production Config]
+    end
+    
+    subgraph "Kubernetes Cluster (Minikube)"
+        subgraph "ArgoCD"
+            ARGOCD[🔄 ArgoCD<br/>GitOps Controller]
+        end
+        
+        subgraph "Staging Namespace"
+            STAGING[🧪 Staging App<br/>hello-staging<br/>Port: 8081]
+        end
+        
+        subgraph "Production Namespace"
+            PROD[🚀 Production App<br/>hello-prod<br/>Port: 8082]
+        end
+    end
+    
+    DEV --> LOCAL
+    LOCAL --> |git push| DEVELOP
+    LOCAL --> |make promote| MAIN
+    
+    DEVELOP --> |watches develop| ARGOCD
+    MAIN --> |watches main| ARGOCD
+    
+    ARGOCD --> |deploys| STAGING
+    ARGOCD --> |deploys| PROD
+    
+    STAGING --> |test & verify| DEV
+    PROD --> |monitor| DEV
+    
+    style DEVELOP fill:#90EE90
+    style MAIN fill:#FFB6C1
+    style STAGING fill:#90EE90
+    style PROD fill:#FFB6C1
+    style ARGOCD fill:#87CEEB
+```
+
+### 📊 GitOps Flow ASCII Diagram
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Developer     │    │   Git Repository│    │   Kubernetes    │
+│                 │    │     (Gitea)     │    │   (Minikube)    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         │ 1. Edit staging       │                       │
+         │ values-staging.yaml   │                       │
+         ├──────────────────────▶│                       │
+         │                       │                       │
+         │ 2. git push develop   │                       │
+         ├──────────────────────▶│ develop branch        │
+         │                       ├──────────────────────▶│ ArgoCD watches
+         │                       │                       │ 3. Auto-deploy
+         │                       │                       │    to STAGING
+         │                       │                       │
+         │ 4. Test staging app   │                       │
+         │ http://localhost:8081 │                       │
+         ◄───────────────────────┼───────────────────────┤
+         │                       │                       │
+         │ 5. make promote       │                       │
+         │ (copy staging→prod)   │                       │
+         ├──────────────────────▶│ main branch           │
+         │                       ├──────────────────────▶│ ArgoCD watches
+         │                       │                       │ 6. Auto-deploy
+         │                       │                       │    to PRODUCTION
+         │                       │                       │
+         │ 7. Verify production  │                       │
+         │ http://localhost:8082 │                       │
+         ◄───────────────────────┼───────────────────────┤
+         │                       │                       │
+         │ 8. make rollback      │                       │
+         │ (if needed)           │                       │
+         ├──────────────────────▶│ main branch           │
+         │                       ├──────────────────────▶│ ArgoCD watches
+         │                       │                       │ 9. Auto-rollback
+```
+
+### 🔧 Promotion Strategy Diagram
+
+```
+Staging Values (develop)     Production Values (main)
+┌─────────────────────┐     ┌─────────────────────┐
+│ appVersion: "v1.2"  │────▶│ appVersion: "v1.2"  │
+│ message: "staging"  │     │ message: "prod"     │
+│ replicaCount: 1     │     │ replicaCount: 2     │ 
+│                     │     │                     │
+│ values-staging.yaml │     │ values-prod.yaml    │
+└─────────────────────┘     └─────────────────────┘
+                                      │
+                                      ▼
+                            ┌─────────────────────┐
+                            │ Backup Created      │
+                            │ values-prod.yaml    │
+                            │      .backup        │
+                            └─────────────────────┘
+                                      │
+                                      ▼ (for rollback)
+                            ┌─────────────────────┐
+                            │ make rollback       │
+                            │ Restores from       │
+                            │ backup file         │
+                            └─────────────────────┘
+```
+
 ### Components
 
 - **ArgoCD**: `http://localhost:8080` (no login required)
 - **Gitea**: `http://localhost:3001` (admin/admin12345)
 - **Staging App**: `http://localhost:8081`
 - **Production App**: `http://localhost:8082`
+
+### 🎯 GitOps Principles Implementation
+
+This workflow implements the core GitOps principles:
+
+#### 1. 📋 **Declarative Configuration**
+- All infrastructure and application configurations are declared in Git
+- Helm charts define the desired state
+- Values files specify environment-specific settings
+
+#### 2. 🔄 **Git as Single Source of Truth**
+- `develop` branch → Staging environment
+- `main` branch → Production environment
+- All changes tracked in Git history
+
+#### 3. 🚀 **Automated Deployment**
+- ArgoCD continuously monitors Git repositories
+- Automatic synchronization when changes detected
+- No manual deployment commands needed
+
+#### 4. 🔒 **GitOps Reconciliation Loop**
+- ArgoCD ensures cluster state matches Git state
+- Self-healing: automatically corrects drift
+- Continuous monitoring and synchronization
+
+#### 5. 🛡️ **Safe Rollback Strategy**
+- Copy-based promotion with automatic backups
+- One-command rollback: `make rollback`
+- Git history preserves all previous states
+
+### 🌿 Branch Strategy Diagram
+
+```
+Git Repository Structure:
+
+develop branch (Staging)          main branch (Production)
+┌────────────────────────┐       ┌────────────────────────┐
+│                        │       │                        │
+│  📝 Feature commits    │       │  🚀 Promotion commits  │
+│  🧪 Staging config     │       │  🏭 Production config  │
+│  values-staging.yaml   │       │  values-prod.yaml      │
+│                        │       │                        │
+│  Auto-deployed to:     │       │  Auto-deployed to:     │
+│  🧪 Staging (8081)     │       │  🏭 Production (8082)  │
+│                        │       │                        │
+└────────────────────────┘       └────────────────────────┘
+            │                                 ▲
+            │                                 │
+            └─────── make promote ────────────┘
+                   (copies staging→prod)
+
+Workflow:
+1. Developer commits to develop branch
+2. ArgoCD auto-deploys to staging environment
+3. After testing: make promote
+4. Staging config copied to production config
+5. ArgoCD auto-deploys to production environment
+6. If issues: make rollback (restores from backup)
+```
+
+### 🔄 ArgoCD Application Mapping
+
+```
+ArgoCD Applications:
+
+┌─────────────────────────────────────────────────────────────┐
+│                        ArgoCD                               │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  📱 hello-staging                📱 hello-prod             │
+│  ┌─────────────────────┐        ┌─────────────────────┐     │
+│  │ Source:             │        │ Source:             │     │
+│  │  repo: gitea        │        │  repo: gitea        │     │
+│  │  branch: develop    │        │  branch: main       │     │
+│  │  path: charts/      │        │  path: charts/      │     │
+│  │  values:            │        │  values:            │     │
+│  │   - values-staging  │        │   - values-prod     │     │
+│  │                     │        │                     │     │
+│  │ Target:             │        │ Target:             │     │
+│  │  namespace: staging │        │  namespace: prod    │     │
+│  │  port: 8081         │        │  port: 8082         │     │
+│  └─────────────────────┘        └─────────────────────┘     │
+│           │                               │                 │
+│           ▼                               ▼                 │
+│  🧪 Staging Environment          🏭 Production Environment  │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## 🚀 Commands
 
