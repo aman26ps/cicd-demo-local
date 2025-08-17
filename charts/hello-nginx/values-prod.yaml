@@ -1,4 +1,4 @@
-# Staging environment overrides
-message: "hello it's me - production environment"
-appVersion: "v1"
+# Production environment overrides
+image:
+  tag: "latest"
 replicaCount: 2

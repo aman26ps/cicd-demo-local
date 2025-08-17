@@ -2,33 +2,55 @@
 .PHONY: help up down status port-forward promote rollback promote-status urls clean deps troubleshoot
 .DEFAULT_GOAL := help
 
+# 🐳 Local Image-based GitOps Workflow
+start-registry:
+	@echo "🐳 Starting local Docker registry..."
+	@./scripts/start-registry.sh
+
+ci-local:
+	@echo "🔨 Building and deploying to staging..."
+	@./scripts/ci-local-build-and-deploy.sh
+
+smoke-test:
+	@echo "🧪 Running smoke tests against staging..."
+	@./scripts/smoke-test-staging.sh
+
+promote-image:
+	@if [ -z "$(TAG)" ]; then \
+		echo "❌ TAG required: make promote-image TAG=abc123def456"; \
+		exit 1; \
+	fi
+	@echo "🚀 Promoting image $(TAG) to production..."
+	@./scripts/promote-to-prod.sh $(TAG)
+
 help:
-	@echo "🚀 Hostaway DevOps Task - GitOps Workflow"
-	@echo "=========================================="
+	@echo "🚀 Hostaway DevOps Task - Image-based GitOps"
+	@echo "=============================================="
 	@echo ""
 	@echo "📋 Setup (one-time):"
-	@echo "  deps         - Install required dependencies via Homebrew"
+	@echo "  deps           - Install required dependencies"
+	@echo "  start-registry - Start local Docker registry"
 	@echo ""
 	@echo "📦 Infrastructure:"
-	@echo "  up           - Start Minikube and deploy GitOps stack"
-	@echo "  down         - Destroy everything"
-	@echo "  status       - Show cluster status"
+	@echo "  up             - Start Minikube and deploy GitOps stack"
+	@echo "  down           - Destroy everything"
+	@echo "  status         - Show cluster status"
 	@echo ""
-	@echo "🚀 GitOps Workflow:"
-	@echo "  promote      - Copy staging values to production"
-	@echo "  rollback     - Rollback production to backup"
-	@echo "  promote-status - Show version status"
+	@echo "🚀 Image-based GitOps Workflow:"
+	@echo "  ci-local       - Build image, push to registry, deploy to staging"
+	@echo "  smoke-test     - Test staging deployment"
+	@echo "  promote-image  - Promote tested image to production (requires TAG=...)"
 	@echo ""
 	@echo "🔗 Access:"
-	@echo "  port-forward - Access services via port-forward"
-	@echo "  urls         - Show service URLs"
-	@echo "  troubleshoot - Diagnose common issues"
+	@echo "  port-forward   - Access services via port-forward"
+	@echo "  urls           - Show service URLs"
+	@echo "  clean          - Stop port-forwards and cleanup"
 	@echo ""
-	@echo "💡 Workflow:"
-	@echo "  1. Edit charts/hello-nginx/values-staging.yaml"
-	@echo "  2. make promote-status  # Check versions"
-	@echo "  3. make promote         # Copy staging → production"
-	@echo "  4. make port-forward    # Access services"
+	@echo "💡 Complete Workflow:"
+	@echo "  1. make start-registry  # Start local registry"
+	@echo "  2. make ci-local        # Build & deploy to staging"  
+	@echo "  3. make smoke-test      # Test staging"
+	@echo "  4. make promote-image TAG=<sha>  # Promote to production"
 
 up:
 	@./scripts/setup.sh

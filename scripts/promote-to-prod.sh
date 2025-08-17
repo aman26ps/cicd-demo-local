@@ -1,25 +1,36 @@
 #!/usr/bin/env sh
 set -e
-# Usage: ./promote-to-prod.sh <tag>
+# Promote a tested image from staging to production
+
 TAG=$1
 if [ -z "${TAG}" ]; then
-  echo "usage: $0 <tag>" >&2
+  echo "❌ Usage: $0 <image-tag>"
+  echo "   Example: $0 abc123def456"
   exit 1
 fi
+
 VALUES_FILE="charts/hello-nginx/values-prod.yaml"
 
+echo "🚀 Promoting image ${TAG} to production..."
+
+# Update production values file with the tested image tag
 if command -v yq >/dev/null 2>&1; then
   yq eval -i ".image.tag = \"${TAG}\"" ${VALUES_FILE}
 else
-  sed -i.bak -E "s/(tag:).*/\1 \"${TAG}\"/" ${VALUES_FILE} || true
+  sed -i.bak "s/tag: .*/tag: \"${TAG}\"/" ${VALUES_FILE}
 fi
 
+echo "📝 Updated ${VALUES_FILE} with tag: ${TAG}"
+
+# Commit and push to main branch
 git add ${VALUES_FILE}
 if git diff --staged --quiet; then
-  echo "No change to prod values file; skipping commit"
+  echo "ℹ️  No changes to commit"
 else
-  git commit -m "promote: image ${TAG} -> production"
-  git push origin main
+  git commit -m "promote: deploy production image ${TAG}"
+  echo "🚀 Pushing to main branch..."
+  git push origin main || echo "⚠️  Git push failed - you may need to set up the remote"
 fi
 
-echo "Promotion requested (ArgoCD prod app will pick up)."
+echo "✅ Production promotion requested. ArgoCD will pick up the changes."
+echo "🏷️  Production will use image tag: ${TAG}"
