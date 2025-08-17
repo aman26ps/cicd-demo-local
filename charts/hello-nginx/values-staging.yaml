@@ -1,4 +1,4 @@
 # Staging environment overrides
-message: "hello it's me - staging environment"
-appVersion: "v1"
+image:
+  tag: "a5f237cace60"
 replicaCount: 1
