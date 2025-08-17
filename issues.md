@@ -8,7 +8,7 @@
 ## 2. Tag-Based Promotion Strategy Complexity
 **Issue**: Initial approach used Git tags and complex version management for promotions.
 **Why**: Attempted to implement a sophisticated versioning system without clear requirements.
-**Resolution**: Switched to simple copy-based promotion - copy `values-staging.yaml` to `values-prod.yaml` with environment-specific adjustments.
+**Resolution**: Switched to image-based promotion - promote tested image tags from staging to production with automated git history management.
 
 ## 3. ArgoCD Application Sync Issues
 **Issue**: Applications not syncing properly or showing as out of sync.
@@ -18,7 +18,7 @@
 ## 4. Rollback Strategy Implementation
 **Issue**: No clear rollback mechanism for production deployments.
 **Why**: Focus was on promotion workflow without considering rollback scenarios.
-**Resolution**: Implemented automatic backup creation in `promote.sh` script - saves previous production values before promotion.
+**Resolution**: Implemented git history-based rollback in `rollback-image.sh` script - analyzes git history for previous image tags and validates image existence before rollback.
 
 ## 5. Port Forwarding and Service Access
 **Issue**: Difficulty accessing deployed applications locally for testing.
@@ -33,7 +33,7 @@
 ## 7. Documentation Out of Sync
 **Issue**: README didn't reflect the actual implemented workflow.
 **Why**: Multiple iterations of the implementation without updating documentation.
-**Resolution**: Rewrote README to accurately document the copy-based promotion workflow with clear step-by-step instructions.
+**Resolution**: Rewrote README to accurately document the image-based promotion workflow with clear step-by-step instructions.
 
 ## 8. Gitea Repository Integration
 **Issue**: Ensuring ArgoCD properly connects to local Gitea instance.

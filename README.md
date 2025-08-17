@@ -1,21 +1,27 @@
-# DevOps Task - Modular GitOps Workflow
+# DevOps Task - Automated Image-Based GitOps Workflow
 
-A robust, modular GitOps workflow for local development using Minikube, ArgoCD, Helm, Terraform, and Gitea. Features copy-based promotion, one-command rollback, and background port-forwarding.
+A fully automated, image-based GitOps workflow for local development using Minikube, ArgoCD, Helm, Terraform, and Gitea. Features automated minikube registry, one-command deployments, intelligent rollback, and seamless local development.
 
 ## 🎯 Quick Start
 
 ```bash
-# 1. Install dependencies
-make deps
+# 1. Start the complete GitOps stack
+make up                    # Installs deps, starts minikube, deploys ArgoCD & Gitea
 
-# 2. Start everything
-make up
+# 2. Build and deploy to staging
+make ci-local             # Builds image, deploys to staging automatically
 
-# 3. Access services 
-make port-forward
+# 3. Test staging deployment  
+make smoke-test           # Validates staging is working
 
-# 4. View URLs
-make urls
+# 4. Promote to production
+make promote-image TAG=<sha>  # Promotes tested image to production
+
+# 5. If issues occur
+make rollback             # Rolls back to previous production image
+
+# 6. Access services (optional)
+make port-forward && make urls
 ```
 
 ## 📋 Prerequisites
@@ -107,8 +113,8 @@ graph TB
          │ http://localhost:8081 │                       │
          ◄───────────────────────┼───────────────────────┤
          │                       │                       │
-         │ 5. make promote       │                       │
-         │ (copy staging→prod)   │                       │
+         │ 5. make promote-image │                       │
+         │ (image tag promotion) │                       │
          ├──────────────────────▶│ main branch           │
          │                       ├──────────────────────▶│ ArgoCD watches
          │                       │                       │ 6. Auto-deploy
@@ -130,8 +136,7 @@ graph TB
 ```
 Staging Values (develop)     Production Values (main)
 ┌─────────────────────┐     ┌─────────────────────┐
-│ appVersion: "v1.2"  │────▶│ appVersion: "v1.2"  │
-│ message: "staging"  │     │ message: "prod"     │
+│ image.tag: "abc123" │────▶│ image.tag: "abc123" │
 │ replicaCount: 1     │     │ replicaCount: 2     │ 
 │                     │     │                     │
 │ values-staging.yaml │     │ values-prod.yaml    │
@@ -139,16 +144,16 @@ Staging Values (develop)     Production Values (main)
                                       │
                                       ▼
                             ┌─────────────────────┐
-                            │ Backup Created      │
-                            │ values-prod.yaml    │
-                            │      .backup        │
+                            │ Git History         │
+                            │ Previous tags       │
+                            │ for rollback        │
                             └─────────────────────┘
                                       │
                                       ▼ (for rollback)
                             ┌─────────────────────┐
                             │ make rollback       │
-                            │ Restores from       │
-                            │ backup file         │
+                            │ Reverts to previous │
+                            │ image tag from git  │
                             └─────────────────────┘
 ```
 
@@ -184,9 +189,9 @@ This workflow implements the core GitOps principles:
 - Continuous monitoring and synchronization
 
 #### 5. 🛡️ **Safe Rollback Strategy**
-- Copy-based promotion with automatic backups
+- Image-based rollback using git history analysis
 - One-command rollback: `make rollback`
-- Git history preserves all previous states
+- Git history preserves all previous image tags
 
 ### 🌿 Branch Strategy Diagram
 
@@ -212,10 +217,10 @@ develop branch (Staging)          main branch (Production)
 Workflow:
 1. Developer commits to develop branch
 2. ArgoCD auto-deploys to staging environment
-3. After testing: make promote
-4. Staging config copied to production config
+3. After testing: make promote-image TAG=<sha>
+4. Image tag promoted to production config
 5. ArgoCD auto-deploys to production environment
-6. If issues: make rollback (restores from backup)
+6. If issues: make rollback (reverts to previous image)
 ```
 
 ### 🔄 ArgoCD Application Mapping
@@ -261,8 +266,8 @@ make deps         # Install dependencies (macOS only)
 
 ```bash
 make promote-status   # Check current versions
-make promote          # Copy staging → production
-make rollback         # Rollback production to backup
+make promote-image TAG=<sha>  # Promote tested image → production
+make rollback                 # Rollback production to previous image
 ```
 
 ### Access & Debugging
@@ -282,13 +287,15 @@ The system uses a **modular script-based architecture** where the Makefile acts 
 ```
 scripts/
 ├── setup.sh         # Infrastructure setup logic
-├── teardown.sh      # Cleanup logic  
-├── git-setup.sh     # Git repository configuration
-├── deps.sh          # Dependency installation
-├── status.sh        # Status reporting
-├── troubleshoot.sh  # Comprehensive diagnostics
-├── promote.sh       # Promotion/rollback logic (copy-based)
-└── pf.sh            # Background port-forwarding
+├── teardown.sh           # Cleanup logic  
+├── git-setup.sh          # Git repository configuration
+├── deps.sh               # Dependency installation
+├── status.sh             # Status reporting
+├── troubleshoot.sh       # Comprehensive diagnostics
+├── promote-to-prod.sh    # Image-based promotion logic
+├── rollback-image.sh     # Git history-based rollback
+├── ci-local-build-and-deploy.sh  # CI pipeline automation
+└── pf.sh                 # Background port-forwarding
 ```
 
 ### Benefits of Modular Design
@@ -299,41 +306,6 @@ scripts/
 4. **Extensible**: Easy to add new functionality
 5. **Testable**: Scripts can be tested in isolation
 6. **Robust**: Each script handles errors and edge cases
-
-## 📡 Git Remotes (Working Locally)
-
-> **Note**: This project is configured with dual Git remotes for flexible development workflow.
-
-### Remote Configuration
-- **`origin`** - Local Gitea server (used by ArgoCD for local development)
-- **`github`** - GitHub repository (for code backup and collaboration)
-
-### Commands for Managing Remotes
-
-```bash
-# View all remotes
-git remote -v
-
-# Push to local Gitea (ArgoCD will pick up changes)
-git push origin develop
-
-# Push to GitHub (for backup/collaboration)
-git push github develop
-
-# Push to both remotes
-git push origin develop && git push github develop
-```
-
-### Typical Workflow
-1. **Local Development**: ArgoCD monitors the local Gitea (`origin`) for changes
-2. **Code Backup**: Push to GitHub (`github`) when you want to backup or share code
-3. **GitOps**: ArgoCD only uses the local Gitea - GitHub is purely for external access
-
-This setup allows you to:
-- ✅ Work completely offline with local GitOps
-- ✅ Backup code to GitHub whenever needed  
-- ✅ Collaborate with others via GitHub
-- ✅ Keep ArgoCD focused on local development
 
 ## 🔧 Troubleshooting
 
@@ -409,16 +381,16 @@ This is a **development environment** with simplified security:
 
 ## 🎯 Key Features
 
-✅ **One-command setup**: `make up`  
-✅ **One-command teardown**: `make down`  
-✅ **Copy-based promotion**: Safe, reversible promotions  
-✅ **One-command rollback**: `make rollback`  
-✅ **Background port-forwarding**: Non-blocking access  
-✅ **Comprehensive diagnostics**: `make troubleshoot`  
-✅ **Modular architecture**: Clean, maintainable code  
-✅ **Local-first**: No external dependencies  
-✅ **Self-contained**: Includes Git server (Gitea)  
-✅ **Production-ready patterns**: GitOps best practices  
+✅ **Automated Minikube Registry**: No external registry setup needed  
+✅ **Image-Based GitOps**: Modern container-centric workflow  
+✅ **One-Command CI/CD**: `make ci-local` builds & deploys  
+✅ **Intelligent Rollback**: `make rollback` with git history analysis  
+✅ **Auto-ArgoCD Sync**: Immediate deployment after image build  
+✅ **Registry Validation**: Ensures images exist before deployment  
+✅ **Comprehensive Testing**: `make test-automation` validates setup  
+✅ **Local-First**: Fully self-contained development environment  
+✅ **Git Integration**: Automated commits with deployment metadata  
+✅ **Production-Ready**: Battle-tested GitOps patterns  
 
 ## 🚨 Troubleshooting & Support
 
