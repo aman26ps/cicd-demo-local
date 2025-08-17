@@ -61,30 +61,16 @@ Minikube, ArgoCD, Helm, Gitea, Docker (minikube's internal registry).
 ```mermaid
 graph TB
     subgraph "💻 Local Development"
-        DEV[👨‍💻 Developer]
-        LOCAL[📁 Local Repo]
+        DEV["👨‍💻 Developer"]
+        LOCAL["📁 Local Repo"]
     end
     
     subgraph "🐳 Minikube Cluster"
-        subgraph "🏪 Registry"
-            REG[📦 registry:80<br/>Image Storage]
-        end
-        
-        subgraph "📚 Git Server"
-            GITEA[🔧 Gitea<br/>:3001]
-        end
-        
-        subgraph "🔄 ArgoCD"
-            ARGO[🔄 ArgoCD<br/>:8080]
-        end
-        
-        subgraph "🧪 Staging"
-            STAG[🧪 hello-staging<br/>:8081]
-        end
-        
-        subgraph "🏭 Production"
-            PROD[🚀 hello-prod<br/>:8082]
-        end
+        REG["📦 Registry<br/>:80"]
+        GITEA["🔧 Gitea<br/>:3001"]
+        ARGO["🔄 ArgoCD<br/>:8080"]
+        STAG["🧪 Staging<br/>:8081"]
+        PROD["🚀 Production<br/>:8082"]
     end
     
     DEV --> LOCAL
@@ -96,12 +82,12 @@ graph TB
     REG --> STAG
     REG --> PROD
     
-    classDev fill:#e8f5e8,stroke:#2e7d32
-    classReg fill:#fff3e0,stroke:#f57c00  
-    classGit fill:#e3f2fd,stroke:#1976d2
-    classArgo fill:#f3e5f5,stroke:#7b1fa2
-    classStag fill:#e1f5fe,stroke:#0277bd
-    classProd fill:#ffebee,stroke:#c62828
+    classDef dev fill:#e8f5e8,stroke:#2e7d32
+    classDef reg fill:#fff3e0,stroke:#f57c00  
+    classDef git fill:#e3f2fd,stroke:#1976d2
+    classDef argo fill:#f3e5f5,stroke:#7b1fa2
+    classDef stag fill:#e1f5fe,stroke:#0277bd
+    classDef prod fill:#ffebee,stroke:#c62828
     
     class DEV,LOCAL dev
     class REG reg
