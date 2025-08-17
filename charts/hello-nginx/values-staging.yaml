@@ -1,5 +1,5 @@
 # Staging environment overrides
 image:
-  repository: 192.168.49.1:5001/hostaway/hello-nginx
+  repository: registry.kube-system.svc.cluster.local:80/hostaway/hello-nginx
   tag: "a5f237cace60"
 replicaCount: 1
