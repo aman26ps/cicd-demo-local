@@ -75,8 +75,9 @@ status:
 	@./scripts/status.sh
 
 promote:
-	@echo "🚀 Promoting staging to production..."
-	@./scripts/promote.sh promote
+	@echo "❌ Legacy promote target - use 'make promote-image TAG=<tag>' instead"
+	@echo "   Example: make promote-image TAG=abc123"
+	@echo "   Or check staging tag: make promote-status"
 
 rollback:
 	@echo "⏮️ Rolling back production..."
