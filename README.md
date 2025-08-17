@@ -60,7 +60,7 @@ make rollback TAG=<tag>  # specific
 
 ## Technologies
 
-Minikube, ArgoCD, Helm, Gitea, Docker (minikube's internal registry).
+Minikube, ArgoCD, Helm, Gitea, Docker (minikube's internal registry). 
 
 ## Architecture Diagram
 
