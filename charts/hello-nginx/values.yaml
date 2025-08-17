@@ -2,17 +2,13 @@
 replicaCount: 1
 
 image:
-  repository: nginx
-  tag: 1.25-alpine
+  repository: 192.168.49.1:5001/hostaway/hello-nginx
+  tag: "latest"
   pullPolicy: IfNotPresent
 
 service:
   type: ClusterIP
   port: 80
-
-# Custom message and version
-message: "hello it's me"
-appVersion: "v1"
 
 # Ingress configuration (disabled by default)
 ingress:
