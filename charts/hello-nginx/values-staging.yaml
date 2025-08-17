@@ -1,4 +1,5 @@
 # Staging environment overrides
 image:
+  repository: localhost:5001/hostaway/hello-nginx
   tag: "a5f237cace60"
 replicaCount: 1
