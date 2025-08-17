@@ -54,7 +54,7 @@ create_gitea_repo() {
     log_info "Creating Gitea repository..."
     if curl -s -X POST -u admin:admin12345 \
         -H "Content-Type: application/json" \
-        -d '{"name": "hostaway-devops-task", "description": "DevOps task with GitOps workflow"}' \
+        -d '{"name": "cicd-demo-local", "description": "DevOps task with GitOps workflow"}' \
         http://localhost:3001/api/v1/user/repos >/dev/null 2>&1; then
         log_success "Gitea repository created"
     else
@@ -75,7 +75,7 @@ push_to_gitea() {
     # Remove any old remotes and add correct one
     git remote remove origin 2>/dev/null || true
     git remote remove gitea 2>/dev/null || true
-    git remote add origin http://admin:admin12345@localhost:3001/admin/hostaway-devops-task.git
+    git remote add origin http://admin:admin12345@localhost:3001/admin/cicd-demo-local.git
     
     local use_existing_pf=false
     local pf_pid=""

@@ -85,7 +85,7 @@ setup_argocd_repo() {
     log_info "Adding repository credentials to ArgoCD..."
     if kubectl create secret generic gitea-repo -n argocd \
         --from-literal=type=git \
-        --from-literal=url=http://gitea-http.dev-tools.svc.cluster.local:3000/admin/hostaway-devops-task.git \
+        --from-literal=url=http://gitea-http.dev-tools.svc.cluster.local:3000/admin/cicd-demo-local.git \
         --from-literal=username=admin \
         --from-literal=password=admin12345 \
         --dry-run=client -o yaml | kubectl apply -f - >/dev/null 2>&1; then
