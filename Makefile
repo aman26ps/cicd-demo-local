@@ -44,6 +44,8 @@ help:
 	@echo "  ci-local       - Build image, push to registry, deploy to staging"
 	@echo "  smoke-test     - Test staging deployment"
 	@echo "  promote-image  - Promote tested image to production (requires TAG=...)"
+	@echo "  rollback       - Roll back production to previous image"
+	@echo "  promote-status - Show promotion status and rollback options"
 	@echo "  test-automation - Test the automated workflow setup"
 	@echo ""
 	@echo "🔗 Access:"
@@ -56,6 +58,7 @@ help:
 	@echo "  2. make ci-local    # Build & deploy to staging"
 	@echo "  3. make smoke-test  # Test staging"
 	@echo "  4. make promote-image TAG=<sha>  # Promote to production"
+	@echo "  5. make rollback    # If issues occur (optional)"
 	@echo ""
 	@echo "🛠️  Registry Information:"
 	@echo "  - Uses minikube's built-in registry"
@@ -77,10 +80,11 @@ promote:
 
 rollback:
 	@echo "⏮️ Rolling back production..."
-	@./scripts/promote.sh rollback
+	@./scripts/rollback-image.sh rollback
 
 promote-status:
-	@./scripts/promote.sh status
+	@echo "📊 Checking promotion status..."
+	@./scripts/rollback-image.sh status
 
 urls:
 	@echo "🔗 Service URLs (requires port-forward)"
