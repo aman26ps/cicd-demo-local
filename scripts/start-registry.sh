@@ -1,22 +1,31 @@
 #!/usr/bin/env sh
-# Start a local Docker registry on localhost:5001 (port 5000 is occupied)
 set -e
 
-echo "🐳 Starting local Docker registry..."
+# Colors for output
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
 
-if docker ps -a --format '{{.Names}}' | grep -q '^registry$'; then
-  echo "📦 Docker registry container already exists. Starting it if stopped..."
-  docker start registry || true
+log_info() { echo -e "${BLUE}🔵 $1${NC}"; }
+log_success() { echo -e "${GREEN}✅ $1${NC}"; }
+log_warn() { echo -e "${YELLOW}⚠️  $1${NC}"; }
+
+log_info "Using minikube's built-in registry instead of external Docker registry"
+log_warn "External registry is not needed for this setup"
+
+# Check if minikube registry is enabled
+if minikube addons list | grep -q "registry.*enabled" >/dev/null 2>&1; then
+    log_success "Minikube registry is already enabled and ready"
 else
-  echo "🚀 Creating and starting local Docker registry on localhost:5001"
-  docker run -d --restart=always -p 5001:5000 --name registry registry:2
+    log_info "Enabling minikube registry..."
+    minikube addons enable registry >/dev/null 2>&1
+    log_success "Minikube registry enabled"
 fi
 
-# Test registry
-sleep 2
-if curl -s http://localhost:5001/v2/ > /dev/null; then
-  echo "✅ Local registry is available at http://localhost:5001"
-else
-  echo "❌ Registry health check failed"
-  exit 1
-fi
+echo ""
+echo "📍 Registry Information:"
+echo "  - Registry runs inside minikube cluster"
+echo "  - Internal address: registry.kube-system.svc.cluster.local:80"
+echo "  - No external port binding needed"
+echo "  - Images built directly in minikube's Docker daemon"

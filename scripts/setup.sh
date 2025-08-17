@@ -40,8 +40,15 @@ start_minikube() {
         log_success "Minikube already running"
     else
         log_info "Starting Minikube..."
-        minikube start --driver=docker || true
+        minikube start --driver=docker --insecure-registry="192.168.49.1:5001" || true
         log_success "Minikube started"
+    fi
+    
+    log_info "Enabling minikube registry addon..."
+    if minikube addons enable registry >/dev/null 2>&1; then
+        log_success "Minikube registry enabled"
+    else
+        log_warn "Registry addon already enabled or failed to enable"
     fi
 }
 

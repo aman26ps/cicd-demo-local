@@ -23,23 +23,28 @@ promote-image:
 	@echo "🚀 Promoting image $(TAG) to production..."
 	@./scripts/promote-to-prod.sh $(TAG)
 
+test-automation:
+	@echo "🧪 Testing automated GitOps workflow..."
+	@./scripts/test-automation.sh
+
 help:
 	@echo "🚀 Hostaway DevOps Task - Image-based GitOps"
 	@echo "=============================================="
 	@echo ""
 	@echo "📋 Setup (one-time):"
 	@echo "  deps           - Install required dependencies"
-	@echo "  start-registry - Start local Docker registry"
+	@echo "  up             - Start Minikube and deploy GitOps stack (includes registry)"
+	@echo "  start-registry - Enable minikube registry (auto-included in 'up')"
 	@echo ""
 	@echo "📦 Infrastructure:"
-	@echo "  up             - Start Minikube and deploy GitOps stack"
-	@echo "  down           - Destroy everything"
 	@echo "  status         - Show cluster status"
+	@echo "  down           - Destroy everything"
 	@echo ""
 	@echo "🚀 Image-based GitOps Workflow:"
 	@echo "  ci-local       - Build image, push to registry, deploy to staging"
 	@echo "  smoke-test     - Test staging deployment"
 	@echo "  promote-image  - Promote tested image to production (requires TAG=...)"
+	@echo "  test-automation - Test the automated workflow setup"
 	@echo ""
 	@echo "🔗 Access:"
 	@echo "  port-forward   - Access services via port-forward"
@@ -47,10 +52,15 @@ help:
 	@echo "  clean          - Stop port-forwards and cleanup"
 	@echo ""
 	@echo "💡 Complete Workflow:"
-	@echo "  1. make start-registry  # Start local registry"
-	@echo "  2. make ci-local        # Build & deploy to staging"  
-	@echo "  3. make smoke-test      # Test staging"
+	@echo "  1. make up          # Start cluster and GitOps stack"
+	@echo "  2. make ci-local    # Build & deploy to staging"
+	@echo "  3. make smoke-test  # Test staging"
 	@echo "  4. make promote-image TAG=<sha>  # Promote to production"
+	@echo ""
+	@echo "🛠️  Registry Information:"
+	@echo "  - Uses minikube's built-in registry"
+	@echo "  - Images built directly in cluster"
+	@echo "  - No external registry setup needed"
 
 up:
 	@./scripts/setup.sh

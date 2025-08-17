@@ -9,14 +9,21 @@ if [ -z "${TAG}" ]; then
   exit 1
 fi
 
+# Registry configuration for minikube
+REGISTRY_HOST="registry.kube-system.svc.cluster.local:80"
+IMAGE_NAME="hostaway/hello-nginx"
+
 VALUES_FILE="charts/hello-nginx/values-prod.yaml"
 
 echo "🚀 Promoting image ${TAG} to production..."
 
-# Update production values file with the tested image tag
+# Update production values file with the tested image tag and repository
 if command -v yq >/dev/null 2>&1; then
+  yq eval -i ".image.repository = \"${REGISTRY_HOST}/${IMAGE_NAME}\"" ${VALUES_FILE}
   yq eval -i ".image.tag = \"${TAG}\"" ${VALUES_FILE}
 else
+  # Fallback: use sed to update both repository and tag  
+  sed -i.bak "s|repository: .*|repository: ${REGISTRY_HOST}/${IMAGE_NAME}|" ${VALUES_FILE}
   sed -i.bak "s/tag: .*/tag: \"${TAG}\"/" ${VALUES_FILE}
 fi
 
