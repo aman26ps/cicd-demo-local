@@ -15,6 +15,7 @@ log_error() { echo -e "${RED}❌ $1${NC}"; }
 
 # Image-based rollback for minikube registry GitOps workflow
 rollback_production() {
+    local target_tag="${1:-}"
     log_info "Rolling back production deployment..."
     
     VALUES_FILE="charts/hello-nginx/values-prod.yaml"
@@ -29,60 +30,64 @@ rollback_production() {
     current_tag=$(grep "tag:" ${VALUES_FILE} | head -1 | sed 's/.*tag: *"\([^"]*\)".*/\1/')
     log_info "Current production image tag: ${current_tag}"
     
-    # Get the previous tag from git history
-    log_info "Finding previous production image tag from git history..."
-    previous_tag=$(git log -n 10 --oneline ${VALUES_FILE} | grep -E "(promote:|ci:)" | head -2 | tail -1 | grep -o '[a-f0-9]\{12\}' | head -1)
-    
-    if [ -z "${previous_tag}" ]; then
-        log_error "Could not find previous image tag in git history"
-        log_info "Recent commits affecting ${VALUES_FILE}:"
-        git log --oneline -5 ${VALUES_FILE} | sed 's/^/  /'
-        exit 1
+    # If no target tag specified, find the previous tag from git history
+    if [ -z "${target_tag}" ]; then
+        log_info "Finding previous production image tag from git history..."
+        target_tag=$(git log -n 10 --oneline ${VALUES_FILE} | grep -E "(promote:|ci:)" | head -2 | tail -1 | grep -o '[a-f0-9]\{12\}' | head -1)
+        
+        if [ -z "${target_tag}" ]; then
+            log_error "Could not find previous image tag in git history"
+            log_info "Recent commits affecting ${VALUES_FILE}:"
+            git log --oneline -5 ${VALUES_FILE} | sed 's/^/  /'
+            exit 1
+        fi
+    else
+        log_info "Using specified target tag: ${target_tag}"
     fi
     
-    if [ "${current_tag}" = "${previous_tag}" ]; then
-        log_warn "Production is already at the previous tag: ${previous_tag}"
+    if [ "${current_tag}" = "${target_tag}" ]; then
+        log_warn "Production is already at the target tag: ${target_tag}"
         log_info "No rollback needed"
         exit 0
     fi
     
-    log_info "Rolling back from ${current_tag} to ${previous_tag}"
+    log_info "Rolling back from ${current_tag} to ${target_tag}"
     
     # Registry configuration for minikube
     REGISTRY_HOST="registry.kube-system.svc.cluster.local:80"
     IMAGE_NAME="hostaway/hello-nginx"
     
-    # Check if the previous image exists in the registry
-    log_info "Checking if previous image exists in minikube registry..."
+    # Check if the target image exists in the registry
+    log_info "Checking if target image exists in minikube registry..."
     eval $(minikube docker-env)
     
-    if docker image inspect ${REGISTRY_HOST}/${IMAGE_NAME}:${previous_tag} >/dev/null 2>&1; then
-        log_success "Previous image found in registry: ${REGISTRY_HOST}/${IMAGE_NAME}:${previous_tag}"
+    if docker image inspect ${REGISTRY_HOST}/${IMAGE_NAME}:${target_tag} >/dev/null 2>&1; then
+        log_success "Target image found in registry: ${REGISTRY_HOST}/${IMAGE_NAME}:${target_tag}"
     else
-        log_error "Previous image not found in minikube registry: ${REGISTRY_HOST}/${IMAGE_NAME}:${previous_tag}"
+        log_error "Target image not found in minikube registry: ${REGISTRY_HOST}/${IMAGE_NAME}:${target_tag}"
         log_info "Available images:"
-        docker images ${REGISTRY_HOST}/${IMAGE_NAME} | head -5 | sed 's/^/  /'
+        docker images ${REGISTRY_HOST}/${IMAGE_NAME} | head -10 | sed 's/^/  /'
         exit 1
     fi
     
-    # Update production values file with previous tag
+    # Update production values file with target tag
     if command -v yq >/dev/null 2>&1; then
-        yq eval -i ".image.tag = \"${previous_tag}\"" ${VALUES_FILE}
+        yq eval -i ".image.tag = \"${target_tag}\"" ${VALUES_FILE}
     else
-        sed -i.bak "s/tag: .*/tag: \"${previous_tag}\"/" ${VALUES_FILE}
+        sed -i.bak "s/tag: .*/tag: \"${target_tag}\"/" ${VALUES_FILE}
     fi
     
-    log_success "Updated ${VALUES_FILE} with previous tag: ${previous_tag}"
+    log_success "Updated ${VALUES_FILE} with target tag: ${target_tag}"
     
     # Commit and push the rollback
     git add ${VALUES_FILE}
     if git diff --staged --quiet; then
         log_warn "No changes to commit"
     else
-        git commit -m "rollback: revert production to image ${previous_tag}
+        git commit -m "rollback: revert production to image ${target_tag}
 
 - Rolled back from: ${current_tag}
-- Rolled back to: ${previous_tag}
+- Rolled back to: ${target_tag}
 - Image available in minikube registry"
         
         log_info "Pushing rollback to trigger deployment..."
@@ -106,8 +111,8 @@ rollback_production() {
     echo ""
     echo "📍 Rollback Summary:"
     echo "  - From: ${current_tag}"
-    echo "  - To:   ${previous_tag}"
-    echo "  - Image: ${REGISTRY_HOST}/${IMAGE_NAME}:${previous_tag}"
+    echo "  - To:   ${target_tag}"
+    echo "  - Image: ${REGISTRY_HOST}/${IMAGE_NAME}:${target_tag}"
     echo ""
     echo "🔍 Next steps:"
     echo "  - Monitor: kubectl get pods -n internal-prod"
@@ -135,37 +140,43 @@ show_status() {
     echo "📜 Recent promotion history:"
     git log --oneline -5 ${VALUES_FILE} | sed 's/^/  /'
     
-    # Available rollback targets
+    # Available rollback targets with improved formatting
     echo ""
     echo "🎯 Available rollback targets:"
-    git log -n 10 --oneline ${VALUES_FILE} | grep -E "(promote:|ci:)" | head -3 | while read line; do
+    git log -n 20 --oneline ${VALUES_FILE} | grep -E "(promote:|ci:)" | head -10 | while read line; do
         tag=$(echo $line | grep -o '[a-f0-9]\{12\}' | head -1)
         if [ -n "$tag" ] && [ "$tag" != "$current_tag" ]; then
-            echo "  - ${tag} ($(echo $line | cut -d' ' -f2-))"
+            commit_msg=$(echo $line | cut -d' ' -f2-)
+            echo "  - ${tag} ($(echo $commit_msg))"
         fi
     done
     
     echo ""
-    echo "🔄 To rollback: make rollback"
+    echo "🔄 Usage:"
+    echo "  make rollback              # Rollback to previous version"
+    echo "  make rollback TAG=<tag>    # Rollback to specific version"
+    echo "  make promote-status        # Show this status"
 }
 
 case "${1:-}" in
     rollback)
-        rollback_production
+        rollback_production "${2:-}"
         ;;
     status)
         show_status
         ;;
     *)
-        echo "Usage: $0 {rollback|status}"
+        echo "Usage: $0 {rollback|status} [TAG]"
         echo ""
         echo "Image-based Rollback for GitOps:"
-        echo "  rollback - Roll back production to previous image tag"
-        echo "  status   - Show current production tag and rollback options"
+        echo "  rollback         - Roll back production to previous image tag"
+        echo "  rollback TAG     - Roll back production to specific image tag"
+        echo "  status           - Show current production tag and rollback options"
         echo ""
-        echo "Example:"
-        echo "  make rollback        # Rollback production"
-        echo "  make promote-status  # Show rollback status"
+        echo "Examples:"
+        echo "  make rollback                    # Rollback to previous version"
+        echo "  make rollback TAG=abc123def456   # Rollback to specific version"
+        echo "  make promote-status              # Show rollback options"
         exit 1
         ;;
 esac
