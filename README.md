@@ -6,34 +6,44 @@ A minimal, local-first GitOps workflow using Minikube, ArgoCD, Helm, and a local
 
 One-command install & run (after cloning):
 
-  make deps && make up
+```bash
+make deps && make up
+```
 
 Then build and deploy to staging:
 
-  make ci-local
+```bash
+make ci-local
+```
 
 Test staging:
 
-  make smoke-test
+```bash
+make smoke-test
+```
 
 Promote a tested image to production:
 
-  make promote-image TAG=<image-tag>
+```bash
+make promote-image TAG=<image-tag>
+```
 
 Rollback (to previous or specific tag):
 
-  make rollback            # previous
-  make rollback TAG=<tag>  # specific
+```bash
+make rollback            # previous
+make rollback TAG=<tag>  # specific
+```
 
 ## Essential commands
 
-- make up / make down — start/stop the stack
-- make ci-local — build in minikube, push, update values, deploy to staging
-- make promote-image TAG=<tag> — promote image to production
-- make rollback [TAG=<tag>] — rollback production
-- make smoke-test — basic staging tests
-- make port-forward — access services locally
-- make troubleshoot — diagnostics
+- `make up` / `make down` — start/stop the stack
+- `make ci-local` — build in minikube, push, update values, deploy to staging
+- `make promote-image TAG=<tag>` — promote image to production
+- `make rollback [TAG=<tag>]` — rollback production
+- `make smoke-test` — basic staging tests
+- `make port-forward` — access services locally
+- `make troubleshoot` — diagnostics
 
 ## Service URLs (default)
 
@@ -46,30 +56,91 @@ Rollback (to previous or specific tag):
 
 Minikube, ArgoCD, Helm, Gitea, Docker (minikube's internal registry).
 
-## GitOps Diagram
+## Architecture Diagram
+
+```mermaid
+graph TB
+    subgraph "💻 Local Development"
+        DEV[👨‍💻 Developer]
+        LOCAL[📁 Local Repo]
+    end
+    
+    subgraph "🐳 Minikube Cluster"
+        subgraph "🏪 Registry"
+            REG[📦 registry:80<br/>Image Storage]
+        end
+        
+        subgraph "📚 Git Server"
+            GITEA[🔧 Gitea<br/>:3001]
+        end
+        
+        subgraph "🔄 ArgoCD"
+            ARGO[🔄 ArgoCD<br/>:8080]
+        end
+        
+        subgraph "🧪 Staging"
+            STAG[🧪 hello-staging<br/>:8081]
+        end
+        
+        subgraph "🏭 Production"
+            PROD[🚀 hello-prod<br/>:8082]
+        end
+    end
+    
+    DEV --> LOCAL
+    LOCAL --> REG
+    LOCAL --> GITEA
+    GITEA --> ARGO
+    ARGO --> STAG
+    ARGO --> PROD
+    REG --> STAG
+    REG --> PROD
+    
+    classDev fill:#e8f5e8,stroke:#2e7d32
+    classReg fill:#fff3e0,stroke:#f57c00  
+    classGit fill:#e3f2fd,stroke:#1976d2
+    classArgo fill:#f3e5f5,stroke:#7b1fa2
+    classStag fill:#e1f5fe,stroke:#0277bd
+    classProd fill:#ffebee,stroke:#c62828
+    
+    class DEV,LOCAL dev
+    class REG reg
+    class GITEA git
+    class ARGO argo
+    class STAG stag
+    class PROD prod
+```
+
+## GitOps Workflow
 
 ```mermaid
 sequenceDiagram
-    participant Dev as Developer
-    participant Local as Local Repo
-    participant CI as CI (make ci-local)
-    participant Reg as Registry
-    participant Git as Git (Gitea/GitHub)
-    participant Argo as ArgoCD
-    participant K8s as Kubernetes
+    participant Dev as 👨‍💻 Developer
+    participant Local as 📁 Local Repo
+    participant CI as 🔨 CI (make ci-local)
+    participant Reg as 🏪 Registry
+    participant Git as 📚 Git (Gitea)
+    participant Argo as 🔄 ArgoCD
+    participant K8s as ⚡ Kubernetes
 
-    Dev->>Local: code change
-    Dev->>CI: make ci-local (build in minikube)
-    CI->>Reg: push image (tag)
-    CI->>Git: update values-*.yaml (image tag) & push
-    Git->>Argo: ArgoCD detects commit
-    Argo->>K8s: deploy to staging
-    Dev->>Git: make promote-image TAG=<tag>
-    Git->>Argo: update production values
-    Argo->>K8s: deploy to production
-    Dev->>Git: make rollback TAG=<tag>
-    Git->>Argo: update production values
-    Argo->>K8s: rollback to requested image
+    Dev->>+Local: 1. code change
+    Dev->>+CI: 2. make ci-local
+    CI->>+Reg: 3. build & push image (tag)
+    CI->>+Git: 4. update values-staging.yaml & push
+    Git->>+Argo: 5. ArgoCD detects commit
+    Argo->>+K8s: 6. deploy to staging 🧪
+    
+    Note over Dev,K8s: Test staging, then promote
+    
+    Dev->>+Git: 7. make promote-image TAG=<tag>
+    Git->>+Argo: 8. update production values
+    Argo->>+K8s: 9. deploy to production 🚀
+    
+    Note over Dev,K8s: Rollback if needed
+    
+    Dev->>+Git: 10. make rollback TAG=<tag>
+    Git->>+Argo: 11. update production values
+    Argo->>+K8s: 12. rollback to requested image ⏮️
 ```
 
 ## Monitoring & Alerts
@@ -93,8 +164,8 @@ How to alert (recommended)
 
 ## Troubleshooting (quick)
 
-- If services are unreachable: make port-forward
-- ArgoCD apps OutOfSync: check ArgoCD UI and run make troubleshoot
-- Build failures: ensure Docker is running and rerun make ci-local
+- If services are unreachable: `make port-forward`
+- ArgoCD apps OutOfSync: check ArgoCD UI and run `make troubleshoot`
+- Build failures: ensure Docker is running and rerun `make ci-local`
 
 This README intentionally minimal — see scripts/ and charts/ for details.
