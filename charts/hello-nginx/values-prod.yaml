@@ -1,4 +1,4 @@
 # Production environment overrides
 image:
-  tag: "91085177e777"
+  tag: "4552641568e7"
 replicaCount: 2
