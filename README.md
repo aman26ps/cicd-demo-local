@@ -28,6 +28,12 @@ Promote a tested image to production:
 make promote-image TAG=<image-tag>
 ```
 
+To access the applications locally:
+
+```bash
+make port-forward
+```
+
 Rollback (to previous or specific tag):
 
 ```bash
