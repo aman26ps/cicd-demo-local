@@ -1,50 +1,140 @@
-# 🚀 DevOps Task - Automated Image-Based GitOps Workflow
+# 🚀 Local GitOps Workflow
 
-> **Complete Local GitOps Platform** - A fully automated, image-based GitOps workflow featuring Minikube, ArgoCD, Helm, and Gitea. Zero external dependencies, intelligent rollback to any previous version, and production-ready GitOps patterns.
-
-![GitOps Status](https://img.shields.io/badge/GitOps-Automated-success) ![Registry](https://img.shields.io/badge/Registry-Minikube%20Internal-blue) ![Rollback](https://img.shields.io/badge/Rollback-Any%20Version-orange) ![Platform](https://img.shields.io/badge/Platform-Local%20First-green)
+A complete GitOps setup running locally with Minikube, ArgoCD, and automated image deployments. Perfect for learning GitOps or testing deployment workflows.
 
 ## 🎯 Quick Start
 
 ```bash
-# 🔧 1. Setup complete GitOps infrastructure
-make up                          # Installs deps, starts minikube, deploys ArgoCD & Gitea
+# 1. Install dependencies and start GitOps stack
+make deps && make up
 
-# 🏗️ 2. Build and deploy to staging (automated CI)
-make ci-local                    # Builds image in minikube, updates values, commits, deploys
+# 2. Build and deploy to staging
+make ci-local
 
-# 🧪 3. Test staging deployment  
-make smoke-test                  # Validates staging is working and accessible
+# 3. Test the staging deployment
+make smoke-test
 
-# 📊 4. Check current status and available versions
-make promote-status              # Shows current prod version and available rollback targets
+# 4. Get the image tag and promote to production
+make promote-status
+make promote-image TAG=<image-tag-from-above>
 
-# 🚀 5. Promote tested image to production
-make promote-image TAG=<sha>     # Promotes specific tested image to production
-
-# ⏮️ 6. Rollback if issues occur (supports any previous version)
-make rollback                    # Automatic rollback to previous version
-make rollback TAG=<specific-sha> # Rollback to any specific previous version
-
-# 🌐 7. Access services (optional)
-make port-forward && make urls   # Start port-forwarding and show service URLs
+# 5. Access your apps
+make port-forward
 ```
 
-## 🎯 **Rollback to Any Previous Version** - Key Feature
+**Services:**
+- **Staging App**: http://localhost:8081
+- **Production App**: http://localhost:8082  
+- **ArgoCD Dashboard**: http://localhost:8080
+- **Gitea Git Server**: http://localhost:3001 (admin/admin12345)
 
-This implementation supports rollback to **any previous version**, not just the immediately previous one:
+## 🛠️ Technologies Used
+
+| Technology | Purpose |
+|-----------|---------|
+| **Minikube** | Local Kubernetes cluster |
+| **ArgoCD** | GitOps continuous deployment |
+| **Helm** | Kubernetes package manager |
+| **Gitea** | Local Git server |
+| **Docker** | Container registry (built into Minikube) |
+
+## 🔄 GitOps Workflow
+
+```mermaid
+sequenceDiagram
+    participant Dev as Developer
+    participant Git as Gitea
+    participant ArgoCD as ArgoCD
+    participant K8s as Kubernetes
+    
+    Dev->>Git: 1. make ci-local (build & commit)
+    Git->>ArgoCD: 2. Detects config change
+    ArgoCD->>K8s: 3. Deploys to staging
+    
+    Dev->>Git: 4. make promote-image TAG=abc123
+    Git->>ArgoCD: 5. Production config updated
+    ArgoCD->>K8s: 6. Deploys to production
+    
+    Note over Dev,K8s: Rollback anytime with: make rollback
+```
+
+## 📋 Essential Commands
 
 ```bash
-# See all available versions for rollback
-make promote-status
+# Setup & Management
+make up                    # Start everything
+make down                  # Stop everything  
+make status                # Check system status
 
-# Rollback to previous version (automatic)
+# Development Workflow  
+make ci-local              # Build & deploy to staging
+make promote-image TAG=... # Promote to production
+make rollback              # Rollback production
+
+# Access & Monitoring
+make port-forward          # Access services via localhost
+make urls                  # Show all service URLs
+make troubleshoot          # Diagnose issues
+```
+
+## 🔧 Prerequisites
+
+**Required (install manually):**
+- Docker Desktop
+- Git
+
+**Auto-installed with `make deps`:**
+- Minikube
+- kubectl  
+- Helm
+- Terraform
+
+## ⏮️ Rollback Support
+
+The system supports rolling back to any previous version:
+
+```bash
+# Automatic rollback to previous version
 make rollback
 
-# Rollback to any specific version (manual selection)
-make rollback TAG=e519aefabf38  # Goes back 3 versions
-make rollback TAG=3982b2b3c201  # Goes back 5 versions  
-make rollback TAG=4552641568e7  # Goes back to any historical version
+# Rollback to specific version  
+make rollback TAG=abc123def456
+
+# See available versions for rollback
+make promote-status
+```
+
+## 🚨 Troubleshooting
+
+If something isn't working:
+
+```bash
+make troubleshoot    # Full system diagnostics
+make down && make up # Nuclear option: restart everything
+```
+
+**Common issues:**
+- Services not accessible → `make port-forward`
+- ArgoCD not syncing → Check `http://localhost:8080`
+- Build failures → Ensure Docker is running
+
+## 🎯 What This Demonstrates
+
+✅ **GitOps Principles** - Git as single source of truth  
+✅ **Automated Deployments** - ArgoCD watches Git for changes  
+✅ **Image-Based Workflow** - Modern container deployments  
+✅ **Environment Separation** - Staging and production namespaces  
+✅ **Local Development** - No cloud dependencies  
+✅ **Rollback Strategy** - Safe deployment rollbacks  
+
+---
+
+*Ready to get started? Run `make deps && make up` and you'll have a complete GitOps environment in minutes!*  
+    classDef env fill:#e8f5e8,stroke:#388e3c
+    
+    class DEV,LOCAL dev
+    class BUILD,REGISTRY,GIT,ARGOCD,PROMOTE,ROLLBACK process
+    class STAGING,PROD env
 ```
 
 ## 📋 Prerequisites
